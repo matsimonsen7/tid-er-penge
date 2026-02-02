@@ -1,0 +1,77 @@
+[
+  {
+    "ticker": "^GSPC",
+    "name": "S&P 500",
+    "dataPoints": 1257
+  },
+  {
+    "ticker": "NOVO-B.CO",
+    "name": "Novo Nordisk",
+    "dataPoints": 1260
+  },
+  {
+    "ticker": "MAERSK-B.CO",
+    "name": "M\u00e6rsk",
+    "dataPoints": 1261
+  },
+  {
+    "ticker": "DSV.CO",
+    "name": "DSV",
+    "dataPoints": 1261
+  },
+  {
+    "ticker": "CARL-B.CO",
+    "name": "Carlsberg",
+    "dataPoints": 1261
+  },
+  {
+    "ticker": "DANSKE.CO",
+    "name": "Danske Bank",
+    "dataPoints": 1261
+  },
+  {
+    "ticker": "AAPL",
+    "name": "Apple",
+    "dataPoints": 1257
+  },
+  {
+    "ticker": "AMZN",
+    "name": "Amazon",
+    "dataPoints": 1257
+  },
+  {
+    "ticker": "GOOGL",
+    "name": "Google",
+    "dataPoints": 1081
+  },
+  {
+    "ticker": "META",
+    "name": "Meta",
+    "dataPoints": 690
+  },
+  {
+    "ticker": "NFLX",
+    "name": "Netflix",
+    "dataPoints": 1193
+  },
+  {
+    "ticker": "MSFT",
+    "name": "Microsoft",
+    "dataPoints": 1257
+  },
+  {
+    "ticker": "GME",
+    "name": "GameStop",
+    "dataPoints": 1207
+  },
+  {
+    "ticker": "TSLA",
+    "name": "Tesla",
+    "dataPoints": 786
+  },
+  {
+    "ticker": "NVDA",
+    "name": "NVIDIA",
+    "dataPoints": 1257
+  }
+]

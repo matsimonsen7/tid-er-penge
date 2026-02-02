@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Tid er Penge - Hvad Hvis Du Havde Investeret?</title>
+  <meta name="description" content="Se hvad tid gør ved dine penge. Beregn afkast for Novo Nordisk, Mærsk, Vestas og flere danske aktier.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Tid er Penge - Hvad Hvis Du Havde Investeret?">
+  <meta property="og:description" content="Se hvad tid gør ved dine penge">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="/og-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Tid er Penge - Hvad Hvis Du Havde Investeret?">
+  <meta name="twitter:description" content="Se hvad tid gør ved dine penge">
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Plausible Analytics -->
+  <script defer data-domain="tiderpenge.dk" src="https://plausible.io/js/script.js"></script>
+</head>
+<body class="min-h-screen min-h-dvh bg-dark-gradient font-sans antialiased text-gray-100">
+  <!-- Progress Bar -->
+  <div class="progress-bar" id="progress-bar">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <div class="mx-auto max-w-2xl lg:max-w-3xl px-4 py-8 sm:py-16 safe-area-padding">
+    <!-- Header -->
+    <header class="text-center mb-8 sm:mb-12">
+      <img src="/assets/logo.svg" alt="Tid er Penge" class="h-16 sm:h-20 mx-auto mb-4">
+      <h1 class="text-4xl sm:text-5xl font-bold mb-3">
+        <span class="gradient-text">Tid er penge.</span>
+      </h1>
+      <p class="text-white text-lg">
+        Se hvad dine penge kunne være vokset til
+      </p>
+    </header>
+
+    <!-- Journey Container -->
+    <main class="journey-container glass-card rounded-3xl p-6 sm:p-8 mb-8 glow-hover" id="journey-container">
+      <!-- Steps are dynamically inserted here -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-gray-500 text-sm mt-8">
+      <p>Data er kun til uddannelsesformål. Tidligere afkast garanterer ikke fremtidige resultater.</p>
+      <p class="mt-2">Aktiedata opdateres ugentligt.</p>
+    </footer>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
