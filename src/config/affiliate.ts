@@ -14,8 +14,7 @@ export const AFFILIATE = {
   headline: 'Klar til at investere?',
   subtext: 'Kom i gang med aktier på eToro',
 
-  // Required EU disclaimer for eToro
-  disclaimer: '51% af private CFD-konti taber penge. Affiliatelink.',
+  disclaimer: '51% af private CFD-konti taber penge.',
 }
 
 export function getAffiliateUrl(): string {

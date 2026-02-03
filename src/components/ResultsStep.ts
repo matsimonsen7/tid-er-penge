@@ -99,9 +99,12 @@ export class ResultsStep extends Step {
     ctaButton.textContent = AFFILIATE.buttonText
     ctaButton.setAttribute('data-track', 'etoro-click')
 
-    const ctaDisclaimer = this.createElement('p', 'cta-disclaimer', AFFILIATE.disclaimer)
+    cta.append(ctaTitle, ctaText, ctaButton)
 
-    cta.append(ctaTitle, ctaText, ctaButton, ctaDisclaimer)
+    if (AFFILIATE.disclaimer) {
+      const ctaDisclaimer = this.createElement('p', 'cta-disclaimer', AFFILIATE.disclaimer)
+      cta.appendChild(ctaDisclaimer)
+    }
 
     const restartNav = this.createElement('div', 'results-restart')
     const restartBtn = this.createElement('button', 'restart-btn', '← Prøv en anden aktie')
