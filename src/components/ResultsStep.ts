@@ -1,11 +1,12 @@
 import { Step } from './Step'
-import { journeyStore } from '../state/journey'
+import { journeyStore, pushShareUrl } from '../state/journey'
 import { countUp } from '../animations/countUp'
 import { triggerConfetti } from '../animations/confetti'
 import { GrowthChart } from '../chart'
-import { getStockByTicker } from './StockStep'
+import { getStockByTicker } from '../config/stocks'
 import { Calculator, type CalculationResult } from '../calculator'
 import { AFFILIATE, getAffiliateUrl } from '../config/affiliate'
+import { track } from '../config/analytics'
 
 const MARKET_TICKER = '^GSPC'
 const ALL_PERIODS = [2, 5, 10, 20]
@@ -98,6 +99,13 @@ export class ResultsStep extends Step {
     ctaButton.rel = 'noopener sponsored'
     ctaButton.textContent = AFFILIATE.buttonText
     ctaButton.setAttribute('data-track', 'etoro-click')
+    ctaButton.addEventListener('click', () => {
+      track('eToro Clicked', {
+        location: 'results',
+        stock: state.data.stock || '',
+        final_value: Math.round(result.finalValue),
+      })
+    })
 
     cta.append(ctaTitle, ctaText, ctaButton)
 
@@ -106,13 +114,25 @@ export class ResultsStep extends Step {
       cta.appendChild(ctaDisclaimer)
     }
 
+    // Share button
+    const shareSection = this.createElement('div', 'share-section')
+    const shareBtn = this.createElement('button', 'share-btn')
+    shareBtn.setAttribute('type', 'button')
+    shareBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Del dit resultat`
+    shareBtn.addEventListener('click', () => this.handleShare())
+    shareSection.appendChild(shareBtn)
+
+    const toast = this.createElement('div', 'share-toast')
+    toast.id = 'share-toast'
+    shareSection.appendChild(toast)
+
     const restartNav = this.createElement('div', 'results-restart')
     const restartBtn = this.createElement('button', 'restart-btn', '← Prøv en anden aktie')
     restartBtn.setAttribute('type', 'button')
     restartBtn.addEventListener('click', () => journeyStore.reset())
     restartNav.appendChild(restartBtn)
 
-    wrapper.append(confettiCanvas, header, card, chartContainer, cta, restartNav)
+    wrapper.append(confettiCanvas, header, card, chartContainer, cta, shareSection, restartNav)
 
     return wrapper
   }
@@ -120,6 +140,9 @@ export class ResultsStep extends Step {
   protected async onMount(): Promise<void> {
     const state = journeyStore.getState()
     if (!state.result) return
+
+    // Push share URL to address bar
+    pushShareUrl()
 
     // Find available positive periods
     await this.findAvailablePeriods()
@@ -129,7 +152,19 @@ export class ResultsStep extends Step {
     const returnPct = ((result.finalValue - data.amount) / data.amount) * 100
     const stock = getStockByTicker(data.stock || '')
 
-    this.runRevealSequence(result.finalValue, returnPct, data.amount, data.stockName || '', result, marketResult, stock)
+    track('Result Viewed', {
+      stock: data.stock || '',
+      amount: data.amount,
+      period: data.years,
+      return_pct: Math.round(returnPct),
+      final_value: Math.round(result.finalValue),
+    })
+
+    if (state.isSharedLink) {
+      this.showResultsImmediate(result.finalValue, returnPct, data.amount, data.stockName || '', result, marketResult, stock)
+    } else {
+      this.runRevealSequence(result.finalValue, returnPct, data.amount, data.stockName || '', result, marketResult, stock)
+    }
   }
 
   protected onUnmount(): void {
@@ -138,6 +173,78 @@ export class ResultsStep extends Step {
     if (this.chart) {
       this.chart = null
     }
+  }
+
+  private async handleShare(): Promise<void> {
+    const url = journeyStore.getShareUrl()
+    const state = journeyStore.getState()
+    const shareData = {
+      title: 'Tid er Penge',
+      text: `Se hvad ${this.formatCurrency(state.data.amount)} i ${state.data.stockName} blev til!`,
+      url,
+    }
+
+    try {
+      if (navigator.share && navigator.canShare?.(shareData)) {
+        await navigator.share(shareData)
+        track('Share Success', { method: 'native' })
+      } else {
+        await navigator.clipboard.writeText(url)
+        track('Share Success', { method: 'clipboard' })
+        this.showToast('Link kopieret!')
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(url)
+        track('Share Success', { method: 'clipboard' })
+        this.showToast('Link kopieret!')
+      } catch {
+        this.showToast('Kunne ikke kopiere link')
+      }
+    }
+  }
+
+  private showToast(message: string): void {
+    const toast = document.getElementById('share-toast')
+    if (!toast) return
+    toast.textContent = message
+    toast.classList.add('share-toast-visible')
+    setTimeout(() => toast.classList.remove('share-toast-visible'), 2500)
+  }
+
+  private showResultsImmediate(
+    finalValue: number,
+    _returnPct: number,
+    amount: number,
+    _stockName: string,
+    result: CalculationResult,
+    marketResult: CalculationResult | null,
+    stock: ReturnType<typeof getStockByTicker>
+  ): void {
+    const valueEl = document.getElementById('results-value')
+    const badgeEl = document.getElementById('results-badge')
+    const chartContainer = this.element?.querySelector('.results-chart') as HTMLElement
+    const ctaEl = this.element?.querySelector('.results-cta') as HTMLElement
+    const dividendSection = document.getElementById('dividend-section')
+    const dividendAmountEl = document.getElementById('dividend-amount')
+    const state = journeyStore.getState()
+    const years = state.data.years
+
+    if (valueEl) valueEl.textContent = this.formatCurrency(finalValue)
+    if (badgeEl) badgeEl.style.opacity = '1'
+
+    if (stock?.dividend && stock.dividendYield && dividendSection && dividendAmountEl) {
+      const dividendValue = this.calculateDividendCompound(amount, finalValue, stock.dividendYield, years)
+      dividendSection.style.opacity = '1'
+      dividendAmountEl.textContent = this.formatCurrency(dividendValue)
+    }
+
+    if (chartContainer) {
+      chartContainer.style.opacity = '1'
+      this.initChart(result, marketResult, amount, state.data.stockName || '')
+    }
+
+    if (ctaEl) ctaEl.style.opacity = '1'
   }
 
   private async findAvailablePeriods(): Promise<void> {
@@ -206,12 +313,15 @@ export class ResultsStep extends Step {
       // Update store
       journeyStore.setYears(years)
       journeyStore.setResults(result, marketResult)
+
+      // Update share URL
+      pushShareUrl()
     } catch (error) {
       console.error('Error changing year:', error)
     }
   }
 
-  private updateDisplay(result: CalculationResult, amount: number, years: number, _stockName: string, stock: any): void {
+  private updateDisplay(result: CalculationResult, amount: number, years: number, _stockName: string, stock: ReturnType<typeof getStockByTicker>): void {
     const valueEl = document.getElementById('results-value')
     const badgeEl = document.getElementById('results-badge')
     const dividendAmountEl = document.getElementById('dividend-amount')
@@ -247,7 +357,7 @@ export class ResultsStep extends Step {
     stockName: string,
     result: CalculationResult,
     marketResult: CalculationResult | null,
-    stock: any
+    stock: ReturnType<typeof getStockByTicker>
   ): void {
     const valueEl = document.getElementById('results-value')
     const badgeEl = document.getElementById('results-badge')
@@ -281,7 +391,7 @@ export class ResultsStep extends Step {
     // Show dividend section after badge
     const hasDividend = stock?.dividend && stock?.dividendYield
     if (hasDividend && dividendSection && dividendAmountEl) {
-      const dividendValue = this.calculateDividendCompound(amount, finalValue, stock.dividendYield, years)
+      const dividendValue = this.calculateDividendCompound(amount, finalValue, stock.dividendYield!, years)
       setTimeout(() => {
         dividendSection.style.opacity = '1'
         dividendAmountEl.textContent = this.formatCurrency(dividendValue)
@@ -305,10 +415,6 @@ export class ResultsStep extends Step {
   private initChart(result: CalculationResult, marketResult: CalculationResult | null, amount: number, stockName: string): void {
     const canvas = document.getElementById('results-chart-canvas') as HTMLCanvasElement
     if (!canvas) return
-
-    if (this.chart) {
-      // Chart exists, just update data
-    }
 
     this.chart = new GrowthChart('results-chart-canvas')
 

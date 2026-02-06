@@ -4,11 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "generate": "python3 generate_pages.py",
+    "sitemap": "python3 generate_sitemap.py",
+    "og": "python3 generate_og_images.py",
+    "prebuild": "npm run generate && npm run sitemap",
+    "dev": "npm run generate && vite",
+    "build": "npm run prebuild && tsc && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/node": "^25.2.1",
     "autoprefixer": "^10.4.24",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",

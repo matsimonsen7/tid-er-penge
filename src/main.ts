@@ -1,6 +1,8 @@
 import './style.css'
 import { Calculator } from './calculator'
-import { journeyStore, type JourneyStep } from './state/journey'
+import { journeyStore, parseShareParams, type JourneyStep } from './state/journey'
+import { getStockByTicker } from './config/stocks'
+import { track } from './config/analytics'
 import { StockStep } from './components/StockStep'
 import { AmountStep } from './components/AmountStep'
 import { PeriodStep } from './components/PeriodStep'
@@ -22,9 +24,30 @@ class JourneyApp {
       this.updateProgress(state.currentStep)
     })
 
+    this.setupKeyboardNav()
+    this.initFromUrl()
+  }
+
+  private initFromUrl(): void {
+    const shareParams = parseShareParams()
+
+    if (shareParams) {
+      const stock = getStockByTicker(shareParams.ticker)
+      if (stock) {
+        track('Shared Link Opened', { stock: stock.ticker, amount: shareParams.amount, period: shareParams.years })
+        journeyStore.setStock(stock.ticker, stock.name)
+        journeyStore.setAmount(shareParams.amount)
+        journeyStore.setYears(shareParams.years)
+        journeyStore.setSharedLink(true)
+        this.mountStep('loading', 'forward')
+        this.updateProgress('loading')
+        return
+      }
+    }
+
+    // Normal start
     this.mountStep('stock', 'forward')
     this.updateProgress('stock')
-    this.setupKeyboardNav()
   }
 
   private async handleStepChange(
@@ -41,6 +64,7 @@ class JourneyApp {
 
   private mountStep(step: JourneyStep, direction: 'forward' | 'backward'): void {
     const containerId = 'journey-container'
+    const isSharedLink = journeyStore.getState().isSharedLink
 
     switch (step) {
       case 'stock':
@@ -53,7 +77,7 @@ class JourneyApp {
         this.currentStep = new PeriodStep(containerId)
         break
       case 'loading':
-        this.currentStep = new LoadingStep(containerId, this.calculator)
+        this.currentStep = new LoadingStep(containerId, this.calculator, isSharedLink)
         break
       case 'results':
         this.currentStep = new ResultsStep(containerId)

@@ -17,6 +17,7 @@
   <meta name="twitter:title" content="Tid er Penge - Hvad Hvis Du Havde Investeret?">
   <meta name="twitter:description" content="Se hvad tid gør ved dine penge">
 
+  <link rel="canonical" href="https://tiderpenge.dk/">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,7 +36,11 @@
   <div class="mx-auto max-w-2xl lg:max-w-3xl px-4 py-8 sm:py-16 safe-area-padding">
     <!-- Header -->
     <header class="text-center mb-8 sm:mb-12">
-      <img src="/assets/logo.svg" alt="Tid er Penge" class="h-16 sm:h-20 mx-auto mb-4">
+      <a href="/" aria-label="Hjem"><img src="/assets/logo.svg" alt="Tid er Penge" class="h-16 sm:h-20 mx-auto mb-4"></a>
+      <nav class="flex justify-center gap-4 mb-4">
+        <a href="/aktier/" class="text-gray-400 hover:text-gray-100 text-sm opacity-70">Alle aktier</a>
+        <a href="/om/" class="text-gray-400 hover:text-gray-100 text-sm opacity-70">Om</a>
+      </nav>
       <h1 class="text-4xl sm:text-5xl font-bold mb-3">
         <span class="gradient-text">Tid er penge.</span>
       </h1>
@@ -51,6 +56,11 @@
 
     <!-- Footer -->
     <footer class="text-center text-gray-500 text-sm mt-8">
+      <nav class="flex justify-center gap-4 mb-4">
+        <a href="/" class="hover:text-gray-300">Hjem</a>
+        <a href="/aktier/" class="hover:text-gray-300">Alle aktier</a>
+        <a href="/om/" class="hover:text-gray-300">Om</a>
+      </nav>
       <p>Data er kun til uddannelsesformål. Tidligere afkast garanterer ikke fremtidige resultater.</p>
       <p class="mt-2">Aktiedata opdateres ugentligt.</p>
     </footer>

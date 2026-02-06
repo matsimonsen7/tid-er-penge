@@ -638,6 +638,59 @@ body {
   margin-top: 1rem;
 }
 
+/* Share Section */
+.share-section {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  color: #9CA3AF;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #E5E7EB;
+}
+
+.share-btn svg {
+  flex-shrink: 0;
+}
+
+.share-toast {
+  position: absolute;
+  bottom: -2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 0.4rem 0.8rem;
+  background: rgba(16, 185, 129, 0.9);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+
+.share-toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 .results-restart {
   text-align: center;
 }

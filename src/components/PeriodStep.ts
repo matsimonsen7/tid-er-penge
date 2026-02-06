@@ -1,6 +1,7 @@
 import { Step } from './Step'
 import { journeyStore } from '../state/journey'
 import { Calculator } from '../calculator'
+import { track } from '../config/analytics'
 
 interface PeriodOption {
   years: number
@@ -100,6 +101,8 @@ export class PeriodStep extends Step {
       card.append(years, desc)
 
       card.addEventListener('click', () => {
+        const state = journeyStore.getState()
+        track('Period Selected', { stock: state.data.stock || '', period: period.years })
         journeyStore.setYears(period.years)
         journeyStore.nextStep()
       })

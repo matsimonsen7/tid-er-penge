@@ -15,9 +15,24 @@ export interface JourneyState {
   data: JourneyData
   result: CalculationResult | null
   marketResult: CalculationResult | null
+  isSharedLink: boolean
 }
 
 const STEP_ORDER: JourneyStep[] = ['stock', 'amount', 'period', 'loading', 'results']
+
+const PERIOD_MAP: Record<string, number> = {
+  '2y': 2,
+  '5y': 5,
+  '10y': 10,
+  '20y': 20,
+}
+
+const YEARS_TO_PERIOD: Record<number, string> = {
+  2: '2y',
+  5: '5y',
+  10: '10y',
+  20: '20y',
+}
 
 type Listener = (state: JourneyState, prevStep: JourneyStep | null) => void
 
@@ -33,6 +48,7 @@ class JourneyStore {
     },
     result: null,
     marketResult: null,
+    isSharedLink: false,
   }
 
   private listeners: Set<Listener> = new Set()
@@ -77,6 +93,10 @@ class JourneyStore {
       result,
       marketResult,
     }
+  }
+
+  setSharedLink(isSharedLink: boolean): void {
+    this.state = { ...this.state, isSharedLink }
   }
 
   goToStep(step: JourneyStep): void {
@@ -129,9 +149,56 @@ class JourneyStore {
       },
       result: null,
       marketResult: null,
+      isSharedLink: false,
     }
+    clearShareParams()
     this.notify(prevStep)
+  }
+
+  getShareUrl(): string {
+    const { stock, amount, years } = this.state.data
+    const period = YEARS_TO_PERIOD[years] || `${years}y`
+    const params = new URLSearchParams({
+      aktie: stock || '',
+      beloeb: amount.toString(),
+      periode: period,
+    })
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`
   }
 }
 
 export const journeyStore = new JourneyStore()
+
+export interface ShareParams {
+  ticker: string
+  amount: number
+  years: number
+}
+
+export function parseShareParams(): ShareParams | null {
+  const params = new URLSearchParams(window.location.search)
+  const ticker = params.get('aktie')
+  const beloeb = params.get('beloeb')
+  const periode = params.get('periode')
+
+  if (!ticker || !beloeb || !periode) return null
+
+  const amount = parseInt(beloeb, 10)
+  if (isNaN(amount) || amount <= 0) return null
+
+  const years = PERIOD_MAP[periode]
+  if (!years) return null
+
+  return { ticker, amount, years }
+}
+
+export function pushShareUrl(): void {
+  const url = journeyStore.getShareUrl()
+  history.replaceState(null, '', url)
+}
+
+export function clearShareParams(): void {
+  if (window.location.search) {
+    history.replaceState(null, '', window.location.pathname)
+  }
+}

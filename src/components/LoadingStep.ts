@@ -15,10 +15,12 @@ export class LoadingStep extends Step {
   private calculator: Calculator
   private messageInterval: number | null = null
   private messageIndex = 0
+  private abbreviated: boolean
 
-  constructor(containerId: string, calculator: Calculator) {
+  constructor(containerId: string, calculator: Calculator, abbreviated = false) {
     super(containerId)
     this.calculator = calculator
+    this.abbreviated = abbreviated
   }
 
   render(): HTMLElement {
@@ -31,11 +33,15 @@ export class LoadingStep extends Step {
       spinner.appendChild(this.createElement('div', 'spinner-dot'))
     }
 
-    const message = this.createElement('p', 'loading-message', MESSAGES[0])
+    const messageText = this.abbreviated ? 'Henter dit resultat...' : MESSAGES[0]
+    const message = this.createElement('p', 'loading-message', messageText)
     message.id = 'loading-message'
 
     const progressBar = this.createElement('div', 'loading-progress')
     const progressFill = this.createElement('div', 'loading-progress-fill')
+    if (this.abbreviated) {
+      progressFill.style.animationDuration = '1s'
+    }
     progressBar.appendChild(progressFill)
 
     content.append(spinner, message, progressBar)
@@ -45,7 +51,9 @@ export class LoadingStep extends Step {
   }
 
   protected onMount(): void {
-    this.startLoadingAnimation()
+    if (!this.abbreviated) {
+      this.startLoadingAnimation()
+    }
     this.performCalculation()
   }
 
@@ -85,7 +93,8 @@ export class LoadingStep extends Step {
 
       journeyStore.setResults(result, marketResult)
 
-      await this.minimumLoadingTime(3000)
+      const duration = this.abbreviated ? 1000 : 3000
+      await this.minimumLoadingTime(duration)
 
       journeyStore.nextStep()
     } catch (error) {

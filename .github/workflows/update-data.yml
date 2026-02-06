@@ -18,15 +18,24 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install yfinance
+        run: pip install yfinance Pillow
 
       - name: Fetch stock data
         run: python build_data.py
+
+      - name: Generate pages
+        run: python generate_pages.py
+
+      - name: Generate sitemap
+        run: python generate_sitemap.py
+
+      - name: Generate OG images
+        run: python generate_og_images.py
 
       - name: Commit and push if changed
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add public/data/
-          git diff --staged --quiet || git commit -m "Update stock data $(date +%Y-%m-%d)"
+          git add public/data/ public/sitemap.xml public/robots.txt public/og/ aktier/ om/
+          git diff --staged --quiet || git commit -m "Update stock data and generated pages $(date +%Y-%m-%d)"
           git push

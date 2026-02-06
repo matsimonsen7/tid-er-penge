@@ -1,5 +1,6 @@
 import { Step } from './Step'
 import { journeyStore } from '../state/journey'
+import { track } from '../config/analytics'
 
 const PRESETS = [1000, 5000, 10000, 50000]
 
@@ -47,6 +48,7 @@ export class AmountStep extends Step {
       const btn = this.createElement('button', 'preset-btn', this.formatShortAmount(amount))
       btn.setAttribute('type', 'button')
       btn.addEventListener('click', () => {
+        track('Amount Set', { amount, method: 'preset' })
         journeyStore.setAmount(amount)
         if (this.input) this.input.value = this.formatNumber(amount)
       })
@@ -78,6 +80,7 @@ export class AmountStep extends Step {
   private handleContinue(): void {
     const amount = journeyStore.getState().data.amount
     if (amount > 0) {
+      track('Amount Set', { amount, method: 'custom' })
       journeyStore.nextStep()
     }
   }
