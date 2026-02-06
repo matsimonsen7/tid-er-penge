@@ -77,36 +77,48 @@ def head(
 </head>""")
 
 
-def nav() -> str:
+def top_bar(active: str = "") -> str:
+    aktier_cls = "text-emerald-400" if active == "aktier" else "text-gray-400 hover:text-emerald-400"
+    om_cls = "text-emerald-400" if active == "om" else "text-gray-400 hover:text-emerald-400"
+    return dedent(f"""\
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#0B0D17]/80 backdrop-blur-sm border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center text-xs">
+      <a href="/" class="text-gray-400 hover:text-emerald-400 transition-colors">\u2190 Hjem</a>
+      <div class="flex gap-6">
+        <a href="/aktier/" class="{aktier_cls} transition-colors">Aktier</a>
+        <a href="/om/" class="{om_cls} transition-colors">Om</a>
+      </div>
+    </div>
+  </nav>""")
+
+
+def page_header() -> str:
     return dedent("""\
     <header class="text-center mb-8 sm:mb-12">
-      <a href="/" aria-label="Hjem"><img src="/assets/logo.svg" alt="Tid er Penge" class="h-16 sm:h-20 mx-auto mb-4"></a>
-      <nav class="flex justify-center gap-4 mb-4">
-        <a href="/aktier/" class="text-gray-400 hover:text-gray-100 text-sm opacity-70">Alle aktier</a>
-        <a href="/om/" class="text-gray-400 hover:text-gray-100 text-sm opacity-70">Om</a>
-      </nav>
+      <a href="/" aria-label="Hjem"><img src="/assets/logo.svg" alt="Tid er Penge" class="h-16 sm:h-20 mx-auto mb-6"></a>
     </header>""")
 
 
 def footer() -> str:
     return dedent("""\
-    <footer class="text-center text-gray-500 text-sm mt-8">
-      <nav class="flex justify-center gap-4 mb-4">
-        <a href="/" class="hover:text-gray-300">Hjem</a>
-        <a href="/aktier/" class="hover:text-gray-300">Alle aktier</a>
-        <a href="/om/" class="hover:text-gray-300">Om</a>
+    <footer class="text-center text-sm mt-16 pt-8 border-t border-white/5">
+      <nav class="flex justify-center gap-6 mb-6 text-xs">
+        <a href="/" class="text-gray-500 hover:text-emerald-400 transition-colors">Hjem</a>
+        <a href="/aktier/" class="text-gray-500 hover:text-emerald-400 transition-colors">Alle aktier</a>
+        <a href="/om/" class="text-gray-500 hover:text-emerald-400 transition-colors">Om</a>
       </nav>
-      <p>Data er kun til uddannelsesform\u00e5l. Tidligere afkast garanterer ikke fremtidige resultater.</p>
-      <p class="mt-2">Aktiedata opdateres ugentligt.</p>
+      <p class="text-gray-600">Data er kun til uddannelsesform\u00e5l. Tidligere afkast garanterer ikke fremtidige resultater.</p>
+      <p class="text-gray-600 mt-2">Aktiedata opdateres ugentligt.</p>
     </footer>""")
 
 
-def body_wrap(inner: str, script: str) -> str:
+def body_wrap(inner: str, script: str, active: str = "") -> str:
     return dedent(f"""\
 <body class="min-h-screen min-h-dvh bg-dark-gradient font-sans antialiased text-gray-100">
+{top_bar(active)}
   <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-  <div class="mx-auto max-w-2xl lg:max-w-3xl px-4 py-8 sm:py-16 safe-area-padding">
-{nav()}
+  <div class="mx-auto max-w-2xl lg:max-w-3xl px-4 pt-14 pb-8 sm:pt-20 sm:pb-16 safe-area-padding">
+{page_header()}
 
 {inner}
 
@@ -160,7 +172,7 @@ def generate_stock_page(stock: dict[str, str]) -> str:
             json_ld=json_ld,
         )
         + "\n"
-        + body_wrap(inner, "/src/pages/stock.ts")
+        + body_wrap(inner, "/src/pages/stock.ts", active="aktier")
     )
 
 
@@ -179,7 +191,7 @@ def generate_overview_page() -> str:
     return (
         head(title=title, description=description, canonical=canonical)
         + "\n"
-        + body_wrap(inner, "/src/pages/overview.ts")
+        + body_wrap(inner, "/src/pages/overview.ts", active="aktier")
     )
 
 
@@ -218,7 +230,7 @@ def generate_about_page() -> str:
     return (
         head(title=title, description=description, canonical=canonical)
         + "\n"
-        + body_wrap(inner, "/src/pages/about.ts")
+        + body_wrap(inner, "/src/pages/about.ts", active="om")
     )
 
 
