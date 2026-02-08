@@ -77,21 +77,6 @@ def head(
 </head>""")
 
 
-def top_bar(active: str = "") -> str:
-    aktier_cls = "text-emerald-400" if active == "aktier" else "text-gray-400 hover:text-emerald-400"
-    om_cls = "text-emerald-400" if active == "om" else "text-gray-400 hover:text-emerald-400"
-    return dedent(f"""\
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#0B0D17]/80 backdrop-blur-sm border-b border-white/5">
-    <div class="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center text-xs">
-      <a href="/" class="text-gray-400 hover:text-emerald-400 transition-colors">\u2190 Hjem</a>
-      <div class="flex gap-6">
-        <a href="/aktier/" class="{aktier_cls} transition-colors">Aktier</a>
-        <a href="/om/" class="{om_cls} transition-colors">Om</a>
-      </div>
-    </div>
-  </nav>""")
-
-
 def page_header() -> str:
     return dedent("""\
     <header class="text-center mb-8 sm:mb-12">
@@ -112,12 +97,11 @@ def footer() -> str:
     </footer>""")
 
 
-def body_wrap(inner: str, script: str, active: str = "") -> str:
+def body_wrap(inner: str, script: str) -> str:
     return dedent(f"""\
 <body class="min-h-screen min-h-dvh bg-dark-gradient font-sans antialiased text-gray-100">
-{top_bar(active)}
   <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-  <div class="mx-auto max-w-2xl lg:max-w-3xl px-4 pt-14 pb-8 sm:pt-20 sm:pb-16 safe-area-padding">
+  <div class="mx-auto max-w-2xl lg:max-w-3xl px-4 pt-6 pb-8 sm:pt-12 sm:pb-16 safe-area-padding">
 {page_header()}
 
 {inner}
@@ -172,7 +156,7 @@ def generate_stock_page(stock: dict[str, str]) -> str:
             json_ld=json_ld,
         )
         + "\n"
-        + body_wrap(inner, "/src/pages/stock.ts", active="aktier")
+        + body_wrap(inner, "/src/pages/stock.ts")
     )
 
 
@@ -191,7 +175,7 @@ def generate_overview_page() -> str:
     return (
         head(title=title, description=description, canonical=canonical)
         + "\n"
-        + body_wrap(inner, "/src/pages/overview.ts", active="aktier")
+        + body_wrap(inner, "/src/pages/overview.ts")
     )
 
 
@@ -230,7 +214,7 @@ def generate_about_page() -> str:
     return (
         head(title=title, description=description, canonical=canonical)
         + "\n"
-        + body_wrap(inner, "/src/pages/about.ts", active="om")
+        + body_wrap(inner, "/src/pages/about.ts")
     )
 
 
