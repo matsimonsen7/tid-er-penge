@@ -91,6 +91,10 @@ class StockPageApp {
       this.container.parentElement?.insertBefore(grid, this.container)
     }
 
+    // Sync store to amount step (stock is already selected)
+    // Must happen before subscribing so goToStep's notify is a no-op
+    journeyStore.goToStep('amount')
+
     // Subscribe to journey state changes
     journeyStore.subscribe((state, prevStep) => {
       this.handleStepChange(state.currentStep, state.direction, prevStep)
@@ -99,7 +103,7 @@ class StockPageApp {
 
     this.setupKeyboardNav()
 
-    // Start at amount step (stock is already selected)
+    // Render the initial amount step
     this.mountStep('amount', 'forward')
     this.updateProgress('amount')
   }
