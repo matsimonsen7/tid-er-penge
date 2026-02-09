@@ -1,11 +1,7 @@
-// Analytics: Supabase for custom events, Plausible for pageviews
-//
-// Supabase anon key is safe to expose client-side — RLS restricts to insert-only.
-// Plausible continues handling pageviews, bounce rate, and time-on-site for free.
+// Analytics: Dashboard API for funnel tracking, Plausible for pageviews
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
-const SITE = 'tiderpenge.dk'
+const DASHBOARD_URL = 'https://thisideafucks.com'
+const PROJECT_ID = 'tid-er-penge'
 
 declare global {
   interface Window {
@@ -13,49 +9,42 @@ declare global {
   }
 }
 
-function getBrowserInfo(): string {
-  const ua = navigator.userAgent
-  let browser = 'Unknown'
-  if (ua.includes('Firefox/')) browser = 'Firefox'
-  else if (ua.includes('Edg/')) browser = 'Edge'
-  else if (ua.includes('Chrome/')) browser = 'Chrome'
-  else if (ua.includes('Safari/')) browser = 'Safari'
+function getVisitorId(): string {
+  let id = localStorage.getItem('_vid')
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem('_vid', id)
+  }
+  return id
+}
 
-  let os = 'Unknown'
-  if (ua.includes('Mac OS')) os = 'macOS'
-  else if (ua.includes('Windows')) os = 'Windows'
-  else if (ua.includes('Linux')) os = 'Linux'
-  else if (ua.includes('Android')) os = 'Android'
-  else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS'
-
-  return `${browser} ${os}`
+function getSessionId(): string {
+  let id = sessionStorage.getItem('_sid')
+  if (!id) {
+    id = crypto.randomUUID()
+    sessionStorage.setItem('_sid', id)
+  }
+  return id
 }
 
 export function track(event: string, props?: Record<string, string | number>): void {
-  // Plausible: fire event (free tier tracks event counts, no props)
+  // Plausible: fire event
   window.plausible?.(event, props ? { props } : undefined)
 
-  // Supabase: store event with full props in our own DB
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return
-
+  // Dashboard: send to our own tracking API
   const payload = {
-    site: SITE,
+    project: PROJECT_ID,
     event,
-    props: props ?? {},
-    pathname: window.location.pathname,
+    visitor_id: getVisitorId(),
+    session_id: getSessionId(),
     referrer: document.referrer || null,
-    user_agent: getBrowserInfo(),
-    screen_width: window.innerWidth,
+    pathname: window.location.pathname,
+    properties: props ?? {},
   }
 
-  fetch(`${SUPABASE_URL}/rest/v1/events`, {
+  fetch(`${DASHBOARD_URL}/api/track`, {
     method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=minimal',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   }).catch((err) => {
     if (import.meta.env.DEV) console.warn('[analytics]', err)

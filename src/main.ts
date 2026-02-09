@@ -19,6 +19,8 @@ class JourneyApp {
     this.calculator = new Calculator()
     this.progressFill = document.getElementById('progress-fill')
 
+    track('pageview')
+
     journeyStore.subscribe((state, prevStep) => {
       this.handleStepChange(state.currentStep, state.direction, prevStep)
       this.updateProgress(state.currentStep)
