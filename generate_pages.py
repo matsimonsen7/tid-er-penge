@@ -40,9 +40,13 @@ def head(
     title: str,
     description: str,
     canonical: str,
+    og_title: str | None = None,
+    og_description: str | None = None,
     og_image: str | None = None,
     json_ld: str | None = None,
 ) -> str:
+    og_t = og_title or title
+    og_d = og_description or description
     og_img_tag = (
         f'    <meta property="og:image" content="{og_image}">'
         if og_image
@@ -68,8 +72,8 @@ def head(
     <link rel="canonical" href="{canonical}">
 
     <!-- Open Graph -->
-    <meta property="og:title" content="{title}">
-    <meta property="og:description" content="{description}">
+    <meta property="og:title" content="{og_t}">
+    <meta property="og:description" content="{og_d}">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{canonical}">
 {og_img_tag}
@@ -134,7 +138,9 @@ def generate_stock_page(stock: dict[str, str]) -> str:
     first_year, last_year = get_year_range(ticker)
 
     title = f"Hvad hvis du havde investeret i {name}? ({first_year}-{last_year}) | Tid er Penge"
+    og_title = f"Hvad hvis du havde investeret i {name}? ({first_year}-{last_year})"
     description = f"Se hvad dine penge kunne v\u00e6re vokset til med {name} ({ticker}) fra {first_year} til {last_year}. Beregn historisk afkast."
+    og_desc = f"Se hvad 10.000 kr investeret i {name} ({ticker}) i {first_year} kunne v\u00e6re vokset til i dag. Beregn historisk afkast med vores gratis investeringsberegner."
     canonical = f"{DOMAIN}/aktier/{slug}/"
     og_image = f"{DOMAIN}/og/{slug}.png"
 
@@ -188,6 +194,8 @@ def generate_stock_page(stock: dict[str, str]) -> str:
             title=title,
             description=description,
             canonical=canonical,
+            og_title=og_title,
+            og_description=og_desc,
             og_image=og_image,
             json_ld=json_ld,
         )
