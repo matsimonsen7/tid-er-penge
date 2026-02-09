@@ -78,6 +78,9 @@ body {
   .preset-btn,
   .nav-btn,
   .period-pill,
+  .share-btn,
+  .cross-link,
+  .share-toast,
   #overview-list-container {
     transition: none !important;
   }
@@ -820,24 +823,48 @@ body {
   position: relative;
 }
 
+.share-label {
+  color: #9CA3AF;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.share-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
 .share-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 0.75rem;
   color: #9CA3AF;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-decoration: none;
 }
 
 .share-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(16, 185, 129, 0.4);
   color: #E5E7EB;
+}
+
+.share-btn-facebook:hover { border-color: #1877F2; color: #1877F2; }
+.share-btn-x:hover { border-color: #fff; color: #fff; }
+.share-btn-linkedin:hover { border-color: #0A66C2; color: #0A66C2; }
+.share-btn-copy:hover { border-color: rgba(16, 185, 129, 0.4); color: #10B981; }
+
+.share-btn:focus-visible {
+  outline: 2px solid #10B981;
+  outline-offset: 2px;
 }
 
 .share-btn svg {
@@ -864,6 +891,54 @@ body {
 .share-toast-visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+/* Cross-links */
+.cross-links {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.cross-links-title {
+  color: #9CA3AF;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.cross-links-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.cross-link {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: #D1D5DB;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.cross-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10B981;
+}
+
+.cross-link:focus-visible {
+  outline: 2px solid #10B981;
+  outline-offset: 2px;
+}
+
+.cross-link-all {
+  color: #10B981;
+  border-color: rgba(16, 185, 129, 0.2);
 }
 
 .results-restart {

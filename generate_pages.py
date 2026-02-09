@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 from textwrap import dedent
 
@@ -19,6 +21,18 @@ STOCKS = [
     {"ticker": "AMZN", "name": "Amazon", "slug": "amazon"},
     {"ticker": "NFLX", "name": "Netflix", "slug": "netflix"},
 ]
+
+
+def get_year_range(ticker: str) -> tuple[str, str]:
+    """Read stock data JSON and return (first_year, last_year)."""
+    data_file = PROJECT_ROOT / "public" / "data" / f"{ticker}.json"
+    if not data_file.exists():
+        return ("2001", "2026")
+    data = json.loads(data_file.read_text(encoding="utf-8"))
+    prices = data.get("prices", [])
+    if not prices:
+        return ("2001", "2026")
+    return prices[0]["date"][:4], prices[-1]["date"][:4]
 
 
 def head(
@@ -117,20 +131,33 @@ def generate_stock_page(stock: dict[str, str]) -> str:
     ticker = stock["ticker"]
     name = stock["name"]
     slug = stock["slug"]
+    first_year, last_year = get_year_range(ticker)
 
-    title = f"Hvad hvis du havde investeret i {name}? | Tid er Penge"
-    description = f"Se hvad dine penge kunne v\u00e6re vokset til med {name} ({ticker}). Beregn historisk afkast."
+    title = f"Hvad hvis du havde investeret i {name}? ({first_year}-{last_year}) | Tid er Penge"
+    description = f"Se hvad dine penge kunne v\u00e6re vokset til med {name} ({ticker}) fra {first_year} til {last_year}. Beregn historisk afkast."
     canonical = f"{DOMAIN}/aktier/{slug}/"
     og_image = f"{DOMAIN}/og/{slug}.png"
 
-    json_ld = (
-        "{\n"
-        f'      "@context": "https://schema.org",\n'
-        f'      "@type": "WebPage",\n'
-        f'      "name": "{title}",\n'
-        f'      "description": "{description}",\n'
-        f'      "url": "{canonical}"\n'
-        "    }"
+    json_ld = json.dumps(
+        {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": title,
+            "description": description,
+            "url": canonical,
+        },
+        indent=6,
+        ensure_ascii=False,
+    )
+
+    # Build cross-links — hash-based rotation so each page gets a diverse mix
+    other_stocks = sorted(
+        [s for s in STOCKS if s["ticker"] != ticker],
+        key=lambda s: hashlib.md5(f"{ticker}-{s['ticker']}".encode()).hexdigest(),
+    )[:4]
+    cross_links = "\n".join(
+        f'        <a href="/aktier/{s["slug"]}/" class="cross-link">Sammenlign med {s["name"]}</a>'
+        for s in other_stocks
     )
 
     inner = dedent(f"""\
@@ -145,7 +172,16 @@ def generate_stock_page(stock: dict[str, str]) -> str:
 
     <!-- Embedded Calculator -->
     <main class="journey-container glass-card rounded-3xl p-6 sm:p-8 mb-8 glow-hover" id="journey-container" data-ticker="{ticker}">
-    </main>""")
+    </main>
+
+    <!-- Cross-links -->
+    <div class="cross-links">
+      <p class="cross-links-title">Se andre aktier</p>
+      <div class="cross-links-grid">
+{cross_links}
+        <a href="/aktier/" class="cross-link cross-link-all">Se alle aktier \u2192</a>
+      </div>
+    </div>""")
 
     return (
         head(

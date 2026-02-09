@@ -3,7 +3,7 @@ import { journeyStore, pushShareUrl } from '../state/journey'
 import { countUp } from '../animations/countUp'
 import { triggerConfetti } from '../animations/confetti'
 import { GrowthChart } from '../chart'
-import { getStockByTicker } from '../config/stocks'
+import { getStockByTicker, getSlugByTicker, STOCKS } from '../config/stocks'
 import { Calculator, type CalculationResult } from '../calculator'
 import { AFFILIATE, getAffiliateUrl } from '../config/affiliate'
 import { track } from '../config/analytics'
@@ -114,17 +114,95 @@ export class ResultsStep extends Step {
       cta.appendChild(ctaDisclaimer)
     }
 
-    // Share button
+    // Share buttons
     const shareSection = this.createElement('div', 'share-section')
-    const shareBtn = this.createElement('button', 'share-btn')
-    shareBtn.setAttribute('type', 'button')
-    shareBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Del dit resultat`
-    shareBtn.addEventListener('click', () => this.handleShare())
-    shareSection.appendChild(shareBtn)
+
+    const shareLabel = this.createElement('p', 'share-label', 'Del dit resultat')
+    shareSection.appendChild(shareLabel)
+
+    const shareButtons = this.createElement('div', 'share-buttons')
+
+    const shareText = this.getShareText(data.amount, result.finalValue, data.stockName || '', data.years)
+    const shareUrl = journeyStore.getShareUrl()
+
+    // Facebook
+    const fbBtn = this.createElement('a', 'share-btn share-btn-facebook') as HTMLAnchorElement
+    fbBtn.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
+    fbBtn.target = '_blank'
+    fbBtn.rel = 'noopener'
+    fbBtn.setAttribute('aria-label', 'Del på Facebook')
+    fbBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`
+    fbBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      window.open(fbBtn.href, 'share', 'width=600,height=400')
+      track('Share Clicked', { method: 'facebook' })
+    })
+
+    // X/Twitter
+    const xBtn = this.createElement('a', 'share-btn share-btn-x') as HTMLAnchorElement
+    xBtn.href = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`
+    xBtn.target = '_blank'
+    xBtn.rel = 'noopener'
+    xBtn.setAttribute('aria-label', 'Del på X')
+    xBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`
+    xBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      window.open(xBtn.href, 'share', 'width=600,height=400')
+      track('Share Clicked', { method: 'twitter' })
+    })
+
+    // LinkedIn
+    const liBtn = this.createElement('a', 'share-btn share-btn-linkedin') as HTMLAnchorElement
+    liBtn.href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`
+    liBtn.target = '_blank'
+    liBtn.rel = 'noopener'
+    liBtn.setAttribute('aria-label', 'Del på LinkedIn')
+    liBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>`
+    liBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      window.open(liBtn.href, 'share', 'width=600,height=400')
+      track('Share Clicked', { method: 'linkedin' })
+    })
+
+    // Copy link
+    const copyBtn = this.createElement('button', 'share-btn share-btn-copy')
+    copyBtn.setAttribute('type', 'button')
+    copyBtn.setAttribute('aria-label', 'Kopier link')
+    copyBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`
+    copyBtn.addEventListener('click', () => this.handleCopyLink())
+
+    shareButtons.append(fbBtn, xBtn, liBtn, copyBtn)
+    shareSection.appendChild(shareButtons)
 
     const toast = this.createElement('div', 'share-toast')
     toast.id = 'share-toast'
+    toast.setAttribute('role', 'status')
+    toast.setAttribute('aria-live', 'polite')
     shareSection.appendChild(toast)
+
+    // Cross-links to other stocks
+    const crossLinks = this.createElement('div', 'cross-links')
+    const crossTitle = this.createElement('p', 'cross-links-title', 'Sammenlign med andre aktier')
+    crossLinks.appendChild(crossTitle)
+
+    const crossGrid = this.createElement('div', 'cross-links-grid')
+    const currentTicker = data.stock || ''
+    const otherStocks = STOCKS.filter(s => s.ticker !== currentTicker)
+      .sort((a, b) => this.hashPair(currentTicker, a.ticker) - this.hashPair(currentTicker, b.ticker))
+      .slice(0, 4)
+    for (const s of otherStocks) {
+      const slug = getSlugByTicker(s.ticker)
+      if (!slug) continue
+      const link = this.createElement('a', 'cross-link') as HTMLAnchorElement
+      link.href = `/aktier/${slug}/`
+      link.textContent = s.name
+      crossGrid.appendChild(link)
+    }
+    const allLink = this.createElement('a', 'cross-link cross-link-all') as HTMLAnchorElement
+    allLink.href = '/aktier/'
+    allLink.textContent = 'Se alle aktier →'
+    crossGrid.appendChild(allLink)
+    crossLinks.appendChild(crossGrid)
 
     const restartNav = this.createElement('div', 'results-restart')
     const restartBtn = this.createElement('button', 'restart-btn', '← Prøv en anden aktie')
@@ -132,7 +210,7 @@ export class ResultsStep extends Step {
     restartBtn.addEventListener('click', () => journeyStore.reset())
     restartNav.appendChild(restartBtn)
 
-    wrapper.append(confettiCanvas, header, card, chartContainer, cta, shareSection, restartNav)
+    wrapper.append(confettiCanvas, header, card, chartContainer, cta, shareSection, crossLinks, restartNav)
 
     return wrapper
   }
@@ -175,41 +253,30 @@ export class ResultsStep extends Step {
     }
   }
 
-  private async handleShare(): Promise<void> {
-    const url = journeyStore.getShareUrl()
-    const state = journeyStore.getState()
-    const shareData = {
-      title: 'Tid er Penge',
-      text: `Se hvad ${this.formatCurrency(state.data.amount)} i ${state.data.stockName} blev til!`,
-      url,
-    }
+  private getShareText(amount: number, finalValue: number, stockName: string, years: number): string {
+    return `Jeg ville have haft ${this.formatCurrency(finalValue)} hvis jeg havde investeret ${this.formatCurrency(amount)} i ${stockName} for ${years} \u00e5r siden! Tjek din aktie \ud83d\udcc8`
+  }
 
+  private async handleCopyLink(): Promise<void> {
+    const url = journeyStore.getShareUrl()
     try {
-      if (navigator.share && navigator.canShare?.(shareData)) {
-        await navigator.share(shareData)
-        track('Share Success', { method: 'native' })
-      } else {
-        await navigator.clipboard.writeText(url)
-        track('Share Success', { method: 'clipboard' })
-        this.showToast('Link kopieret!')
-      }
+      await navigator.clipboard.writeText(url)
+      track('Share Clicked', { method: 'clipboard' })
+      this.showToast('Link kopieret!')
     } catch {
-      try {
-        await navigator.clipboard.writeText(url)
-        track('Share Success', { method: 'clipboard' })
-        this.showToast('Link kopieret!')
-      } catch {
-        this.showToast('Kunne ikke kopiere link')
-      }
+      this.showToast('Kunne ikke kopiere link')
     }
   }
+
+  private toastTimeout: ReturnType<typeof setTimeout> | null = null
 
   private showToast(message: string): void {
     const toast = document.getElementById('share-toast')
     if (!toast) return
+    if (this.toastTimeout) clearTimeout(this.toastTimeout)
     toast.textContent = message
     toast.classList.add('share-toast-visible')
-    setTimeout(() => toast.classList.remove('share-toast-visible'), 2500)
+    this.toastTimeout = setTimeout(() => toast.classList.remove('share-toast-visible'), 2500)
   }
 
   private showResultsImmediate(
@@ -425,11 +492,22 @@ export class ResultsStep extends Step {
     }
   }
 
+  private static readonly currencyFormatter = new Intl.NumberFormat('da-DK', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
+
   private formatCurrency(value: number): string {
-    return new Intl.NumberFormat('da-DK', {
-      style: 'decimal',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value) + ' kr.'
+    return ResultsStep.currencyFormatter.format(value) + ' kr.'
+  }
+
+  private hashPair(a: string, b: string): number {
+    const str = `${a}-${b}`
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
+    }
+    return hash
   }
 }
