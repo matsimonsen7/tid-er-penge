@@ -5,7 +5,7 @@ Danish investment calculator - "What if you had invested?"
 ## Live Site
 - Domain: tiderpenge.dk
 - Hosting: Vercel
-- Analytics: Plausible
+- Analytics: Plausible (pageviews) + thisideafucks.com dashboard (funnel events)
 
 ## Tech Stack
 - Vite + TypeScript
@@ -16,7 +16,7 @@ Danish investment calculator - "What if you had invested?"
 
 ```
 src/
-  main.ts                 # Journey orchestration
+  main.ts                 # Journey orchestration + pageview tracking
   calculator.ts           # Stock calculation logic
   chart.ts                # Chart.js wrapper
   state/journey.ts        # State machine (stock → amount → period → loading → results)
@@ -31,8 +31,24 @@ src/
     countUp.ts            # Number counting animation
     confetti.ts           # Canvas confetti (triggers on >50% return)
   config/
+    analytics.ts          # Tracking: sends events to thisideafucks.com/api/track
     affiliate.ts          # eToro affiliate config
 ```
+
+## Analytics / Tracking
+- `src/config/analytics.ts` — sends funnel events to `https://thisideafucks.com/api/track`
+- Visitor ID: `crypto.randomUUID()` persisted in localStorage (`_vid`)
+- Session ID: `crypto.randomUUID()` persisted in sessionStorage (`_sid`)
+- Events tracked:
+  - `pageview` — on app init (main.ts constructor)
+  - `Stock Selected` — StockStep.ts (stock picker click)
+  - `Amount Set` — AmountStep.ts (preset or custom input)
+  - `Period Selected` — PeriodStep.ts (period card click)
+  - `Result Viewed` — ResultsStep.ts (results page rendered)
+  - `eToro Clicked` — ResultsStep.ts (affiliate CTA click)
+  - `Share Clicked` — ResultsStep.ts (social share buttons)
+  - `Shared Link Opened` — main.ts (URL share param detected)
+- Dashboard: https://thisideafucks.com/tid-er-penge
 
 ## Key Features
 - Only shows periods with positive returns (no negative outcomes)
