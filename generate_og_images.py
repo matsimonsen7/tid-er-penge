@@ -1,8 +1,10 @@
-"""Generate OG share images (1200x630) for each stock on tiderpenge.dk."""
+"""Generate OG share images (1200x630) for each stock on tiderpenge.dk.
+Shows SHOCKING return numbers to maximize social media engagement."""
 
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -21,12 +23,14 @@ STOCKS = [
 
 WIDTH = 1200
 HEIGHT = 630
-BG_COLOR = (11, 13, 23)  # #0B0D17
-EMERALD = (16, 185, 129)  # #10B981
-EMERALD_DARK = (8, 92, 64)  # subtler sparkline color
+BASE_INVESTMENT = 10_000
+
+# Brand colors
+BG_START = (15, 23, 42)  # #0f172a dark navy
+BG_END = (30, 41, 59)    # #1e293b slightly lighter
+EMERALD = (52, 211, 153)  # #34D399 bright emerald
 WHITE = (255, 255, 255)
-GRAY = (156, 163, 175)
-BRAND_GRAY = (107, 114, 128)
+GRAY = (156, 163, 175)  # #9CA3AF
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "public" / "data"
@@ -43,7 +47,6 @@ def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFo
     for path in font_paths:
         if Path(path).exists():
             try:
-                # .ttc files may have multiple faces; index 0 is regular, 1 is bold
                 if path.endswith(".ttc"):
                     index = 1 if bold else 0
                     return ImageFont.truetype(path, size, index=index)
@@ -53,129 +56,170 @@ def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFo
     return ImageFont.load_default()
 
 
-def load_prices(ticker: str) -> list[float]:
+def load_stock_data(ticker: str) -> dict:
     path = DATA_DIR / f"{ticker}.json"
     if not path.exists():
-        return []
-    data = json.loads(path.read_text())
-    if not isinstance(data, dict) or "prices" not in data:
-        return []
-    return [float(p["close"]) for p in data["prices"] if isinstance(p, dict) and "close" in p]
+        return {}
+    return json.loads(path.read_text())
 
 
-def sample_points(prices: list[float], n: int = 100) -> list[float]:
-    if len(prices) <= n:
-        return prices
-    step = len(prices) / n
-    return [prices[int(i * step)] for i in range(n)]
+def format_kr(amount: int) -> str:
+    """Format as Danish currency: 362.000 kr"""
+    return f"{amount:,} kr".replace(',', '.')
 
 
-def draw_sparkline(draw: ImageDraw.ImageDraw, prices: list[float]) -> None:
-    if len(prices) < 2:
-        return
+def calculate_best_return(data: dict) -> tuple[int, str, int]:
+    """Calculate most impressive return period.
+    Returns: (final_amount, period_text, years)"""
+    if not data or "prices" not in data or not data["prices"]:
+        return 0, "siden start", 0
 
-    points = sample_points(prices)
-    min_p, max_p = min(points), max(points)
-    price_range = max_p - min_p if max_p != min_p else 1.0
+    prices = data["prices"]
+    latest_price = float(prices[-1]["close"])
+    start_date = datetime.strptime(prices[0]["date"], "%Y-%m-%d")
+    latest_date = datetime.strptime(prices[-1]["date"], "%Y-%m-%d")
+    total_years = (latest_date - start_date).days / 365.25
 
-    # Sparkline region: centered horizontally with padding, vertical middle area
-    margin_x = 100
-    margin_top = 160
-    margin_bottom = 160
-    chart_w = WIDTH - 2 * margin_x
-    chart_h = HEIGHT - margin_top - margin_bottom
+    # Calculate total return from start
+    start_price = float(prices[0]["close"])
+    total_return = int((latest_price / start_price) * BASE_INVESTMENT)
 
-    coords: list[tuple[float, float]] = []
-    for i, p in enumerate(points):
-        x = margin_x + (i / (len(points) - 1)) * chart_w
-        y = margin_top + chart_h - ((p - min_p) / price_range) * chart_h
-        coords.append((x, y))
+    # Try 10-year return if data allows
+    ten_year_return = None
+    if total_years >= 10:
+        ten_year_ago = latest_date.replace(year=latest_date.year - 10)
+        for price in prices:
+            price_date = datetime.strptime(price["date"], "%Y-%m-%d")
+            if abs((price_date - ten_year_ago).days) < 180:  # Within 6 months
+                ten_year_price = float(price["close"])
+                ten_year_return = int((latest_price / ten_year_price) * BASE_INVESTMENT)
+                break
 
-    # Draw the line in a darker emerald for a subtle background effect
-    for i in range(len(coords) - 1):
-        draw.line([coords[i], coords[i + 1]], fill=EMERALD_DARK, width=2)
+    # Pick most impressive period
+    if ten_year_return and ten_year_return > total_return * 0.7:
+        return ten_year_return, "over 10 år", 10
+    elif total_years >= 15:
+        year = start_date.year
+        return total_return, f"siden {year}", int(total_years)
+    else:
+        years = int(total_years)
+        return total_return, f"over {years} år", years
 
 
-def draw_gradient_overlay(img: Image.Image) -> None:
-    """Draw a subtle emerald gradient overlay on the dark background."""
-    overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(overlay)
+def create_gradient_bg() -> Image.Image:
+    """Create dark navy gradient background"""
+    img = Image.new("RGB", (WIDTH, HEIGHT))
+    draw = ImageDraw.Draw(img)
 
-    # Radial-ish gradient: horizontal bands with emerald tint fading from center
     for y in range(HEIGHT):
-        # Peak intensity around vertical center
-        dist = abs(y - HEIGHT // 2) / (HEIGHT // 2)
-        alpha = int(18 * (1 - dist))  # max alpha 18 for subtlety
-        if alpha > 0:
-            draw.line([(0, y), (WIDTH, y)], fill=(16, 185, 129, alpha))
+        ratio = y / HEIGHT
+        r = int(BG_START[0] + (BG_END[0] - BG_START[0]) * ratio)
+        g = int(BG_START[1] + (BG_END[1] - BG_START[1]) * ratio)
+        b = int(BG_START[2] + (BG_END[2] - BG_START[2]) * ratio)
+        draw.line([(0, y), (WIDTH, y)], fill=(r, g, b))
 
-    img.paste(Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB"))
+    return img
 
 
-def generate_image(stock: dict) -> None:
+def generate_stock_image(stock: dict) -> None:
     ticker = stock["ticker"]
     name = stock["name"]
     slug = stock["slug"]
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), BG_COLOR)
-    draw_gradient_overlay(img)
+    # Load data and calculate return
+    data = load_stock_data(ticker)
+    final_amount, period_text, years = calculate_best_return(data)
+
+    # Create base image
+    img = create_gradient_bg()
     draw = ImageDraw.Draw(img)
 
-    # Load price data and draw sparkline behind text
-    prices = load_prices(ticker)
-    if prices:
-        draw_sparkline(draw, prices)
-
     # Fonts
-    font_name = load_font(72, bold=True)
-    font_ticker = load_font(32, bold=False)
-    font_subtitle = load_font(28, bold=False)
-    font_brand = load_font(24, bold=False)
+    font_huge = load_font(110, bold=True)    # Final amount
+    font_large = load_font(68, bold=True)     # Stock name
+    font_medium = load_font(52, bold=False)   # Start amount
+    font_small = load_font(38, bold=False)    # Period
+    font_brand = load_font(32, bold=False)    # Brand
 
-    # Stock name — centered
-    name_bbox = draw.textbbox((0, 0), name, font=font_name)
-    name_w = name_bbox[2] - name_bbox[0]
-    name_x = (WIDTH - name_w) // 2
-    name_y = HEIGHT // 2 - 60
-    draw.text((name_x, name_y), name, fill=WHITE, font=font_name)
+    # Layout positions (vertical centering)
+    y = 90
 
-    # Ticker — centered below name
-    ticker_bbox = draw.textbbox((0, 0), ticker, font=font_ticker)
-    ticker_w = ticker_bbox[2] - ticker_bbox[0]
-    ticker_x = (WIDTH - ticker_w) // 2
-    ticker_y = name_y + 85
-    draw.text((ticker_x, ticker_y), ticker, fill=GRAY, font=font_ticker)
+    # Stock name at top
+    draw.text((WIDTH // 2, y), name, fill=WHITE, font=font_large, anchor="mt")
+    y += 95
 
-    # Subtitle — above name
-    subtitle = "Hvad hvis du havde investeret?"
-    sub_bbox = draw.textbbox((0, 0), subtitle, font=font_subtitle)
-    sub_w = sub_bbox[2] - sub_bbox[0]
-    sub_x = (WIDTH - sub_w) // 2
-    sub_y = name_y - 50
-    draw.text((sub_x, sub_y), subtitle, fill=GRAY, font=font_subtitle)
+    # "10.000 kr blev til"
+    start_text = format_kr(BASE_INVESTMENT) + " blev til"
+    draw.text((WIDTH // 2, y), start_text, fill=GRAY, font=font_medium, anchor="mt")
+    y += 75
 
-    # Brand — bottom center
-    brand = "tiderpenge.dk"
-    brand_bbox = draw.textbbox((0, 0), brand, font=font_brand)
-    brand_w = brand_bbox[2] - brand_bbox[0]
-    brand_x = (WIDTH - brand_w) // 2
-    brand_y = HEIGHT - 55
-    draw.text((brand_x, brand_y), brand, fill=BRAND_GRAY, font=font_brand)
+    # HUGE final amount in emerald
+    final_text = format_kr(final_amount)
+    draw.text((WIDTH // 2, y), final_text, fill=EMERALD, font=font_huge, anchor="mt")
+    y += 140
+
+    # Period text
+    draw.text((WIDTH // 2, y), period_text, fill=GRAY, font=font_small, anchor="mt")
+
+    # Brand at bottom
+    brand_y = HEIGHT - 70
+    draw.text((WIDTH // 2, brand_y), "tiderpenge.dk", fill=GRAY, font=font_brand, anchor="mt")
 
     # Save
     out_path = OUTPUT_DIR / f"{slug}.png"
-    img.save(out_path, "PNG")
-    print(f"  {out_path.relative_to(BASE_DIR)}")
+    img.save(out_path, "PNG", optimize=True)
+    print(f"  {name}: {final_text} {period_text}")
+
+
+def generate_homepage_image() -> None:
+    """Generate generic OG image for homepage"""
+    img = create_gradient_bg()
+    draw = ImageDraw.Draw(img)
+
+    font_huge = load_font(90, bold=True)
+    font_large = load_font(58, bold=False)
+    font_medium = load_font(44, bold=False)
+    font_small = load_font(32, bold=False)
+
+    y = 140
+
+    # Main headline
+    draw.text((WIDTH // 2, y), "Tid er penge", fill=WHITE, font=font_huge, anchor="mt")
+    y += 120
+
+    # Subtitle in emerald
+    draw.text((WIDTH // 2, y), "Hvad hvis du havde investeret?",
+              fill=EMERALD, font=font_large, anchor="mt")
+    y += 90
+
+    # Description
+    draw.text((WIDTH // 2, y), "Se hvad dine penge kunne være blevet til",
+              fill=GRAY, font=font_medium, anchor="mt")
+    y += 70
+
+    # Examples
+    draw.text((WIDTH // 2, y), "Novo Nordisk • Apple • NVIDIA • Amazon",
+              fill=GRAY, font=font_small, anchor="mt")
+
+    # Brand
+    draw.text((WIDTH // 2, HEIGHT - 70), "tiderpenge.dk", fill=GRAY, font=font_small, anchor="mt")
+
+    # Save
+    out_path = BASE_DIR / "public" / "og-image.png"
+    img.save(out_path, "PNG", optimize=True)
+    print(f"  Homepage: {out_path.name}")
 
 
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"Generating {len(STOCKS)} OG images...")
+    print(f"Generating OG images with shocking return numbers...\n")
 
     for stock in STOCKS:
-        generate_image(stock)
+        generate_stock_image(stock)
 
-    print("Done.")
+    print()
+    generate_homepage_image()
+    print("\nDone!")
 
 
 if __name__ == "__main__":
