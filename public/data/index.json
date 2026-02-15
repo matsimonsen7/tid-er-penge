@@ -2,7 +2,7 @@
   {
     "ticker": "^GSPC",
     "name": "S&P 500",
-    "dataPoints": 1257
+    "dataPoints": 1258
   },
   {
     "ticker": "NOVO-B.CO",
@@ -12,66 +12,66 @@
   {
     "ticker": "MAERSK-B.CO",
     "name": "M\u00e6rsk",
-    "dataPoints": 1261
+    "dataPoints": 1262
   },
   {
     "ticker": "DSV.CO",
     "name": "DSV",
-    "dataPoints": 1261
+    "dataPoints": 1262
   },
   {
     "ticker": "CARL-B.CO",
     "name": "Carlsberg",
-    "dataPoints": 1261
+    "dataPoints": 1262
   },
   {
     "ticker": "DANSKE.CO",
     "name": "Danske Bank",
-    "dataPoints": 1261
+    "dataPoints": 1262
   },
   {
     "ticker": "AAPL",
     "name": "Apple",
-    "dataPoints": 1257
+    "dataPoints": 1258
   },
   {
     "ticker": "AMZN",
     "name": "Amazon",
-    "dataPoints": 1257
+    "dataPoints": 1258
   },
   {
     "ticker": "GOOGL",
     "name": "Google",
-    "dataPoints": 1081
+    "dataPoints": 1083
   },
   {
     "ticker": "META",
     "name": "Meta",
-    "dataPoints": 690
+    "dataPoints": 692
   },
   {
     "ticker": "NFLX",
     "name": "Netflix",
-    "dataPoints": 1193
+    "dataPoints": 1195
   },
   {
     "ticker": "MSFT",
     "name": "Microsoft",
-    "dataPoints": 1257
+    "dataPoints": 1258
   },
   {
     "ticker": "GME",
     "name": "GameStop",
-    "dataPoints": 1207
+    "dataPoints": 1209
   },
   {
     "ticker": "TSLA",
     "name": "Tesla",
-    "dataPoints": 786
+    "dataPoints": 788
   },
   {
     "ticker": "NVDA",
     "name": "NVIDIA",
-    "dataPoints": 1257
+    "dataPoints": 1258
   }
 ]
